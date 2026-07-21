@@ -1,0 +1,83 @@
+*vima.txt*                    Review in-buffer AI edits                    *vima*
+
+===============================================================================
+INTRODUCTION                                                     *vima-intro*
+
+Vima displays changes as green added lines and red virtual deleted lines.
+|:VimaEnable| uses the tracked stage-0 Git index version, while |:VimaStart|
+captures the current in-memory buffer for a new AI transaction. Vima is disabled
+by default.
+
+===============================================================================
+COMMANDS                                                      *vima-commands*
+
+                                                       *:VimaEnable*
+:VimaEnable     Read the Git index baseline and start review mode.
+
+                                                       *:VimaStart*
+:VimaStart      Capture the current buffer and review only later changes.
+
+                                                       *:VimaDisable*
+:VimaDisable    Stop review mode, clear decorations, and restore mappings.
+
+                                                       *:VimaToggle*
+:VimaToggle     Toggle review mode for the current buffer.
+
+                                                       *:VimaRefresh*
+:VimaRefresh    Recalculate pending changes and decorations.
+
+                                                       *:VimaReset*
+:VimaReset      Make the current buffer the baseline for a new transaction.
+
+                                                       *:VimaAllow*
+:VimaAllow      Allow the pending change under the cursor.
+
+                                                       *:VimaReject*
+:VimaReject     Restore baseline text for the change under the cursor.
+
+                                                       *:VimaAllowAll*
+:VimaAllowAll   Allow every pending change.
+
+                                                       *:VimaRejectAll*
+:VimaRejectAll  Restore baseline text for every pending change.
+
+                                                       *:VimaUndo*
+:VimaUndo       Undo the latest Vima decision, otherwise use native undo.
+
+                                                       *:VimaRedo*
+:VimaRedo       Redo the latest Vima decision, otherwise use native redo.
+
+===============================================================================
+OPTIONS                                                        *vima-options*
+
+g:vima_enabled             Automatically start Git review after reads. false.
+g:vima_show_signs          Display + signs. true.
+g:vima_delete_prefix       Prefix for deleted virtual lines. Empty by default.
+g:vima_debounce            Refresh delay in milliseconds. 150.
+g:vima_max_file_size       Maximum buffer bytes. 2 MiB.
+g:vima_max_lines           Maximum line count. 50000.
+g:vima_max_changes         Maximum rendered change groups. 2000.
+g:vima_history_limit       Maximum review decisions kept. 50.
+g:vima_git                 Git executable for baselines and diff() fallback.
+g:vima_internal_diff_max_file_size
+                           Maximum bytes for the built-in diff() path. 512 KiB.
+g:vima_internal_diff_max_lines
+                           Maximum lines for the built-in diff() path. 5000.
+g:vima_mappings            Dict containing allow, reject, undo, and redo keys.
+
+Vima saves and disables the window-local 'wrap' option while a review is active,
+then restores it on |:VimaDisable|. This keeps real and virtual lines aligned.
+
+Namespaced mappings are available as <Plug>(VimaAllow), <Plug>(VimaReject),
+<Plug>(VimaUndo), and <Plug>(VimaRedo).
+
+===============================================================================
+SAFETY                                                           *vima-safety*
+
+Vima only supports named, modifiable, non-binary file buffers. |:VimaEnable|
+attaches only when Git successfully returns a tracked stage-0 baseline; an
+untracked, conflicted, or failed lookup never becomes an empty baseline.
+|:VimaStart| safely supports untracked files. Allow and reject never write,
+stage, or commit a file.
+
+vim:tw=78:ts=8:noet:ft=help:norl:
