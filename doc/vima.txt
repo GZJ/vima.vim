@@ -23,6 +23,15 @@ COMMANDS                                                      *vima-commands*
                                                        *:VimaToggle*
 :VimaToggle     Toggle review mode for the current buffer.
 
+                                                       *:VimaEnableAll*
+:VimaEnableAll  Enable automatic review and attach all loaded file buffers.
+
+                                                       *:VimaDisableAll*
+:VimaDisableAll Disable automatic review and detach all buffers.
+
+                                                       *:VimaToggleAll*
+:VimaToggleAll  Toggle automatic review and all loaded file buffers.
+
                                                        *:VimaRefresh*
 :VimaRefresh    Recalculate pending changes and decorations.
 
@@ -51,6 +60,8 @@ COMMANDS                                                      *vima-commands*
 OPTIONS                                                        *vima-options*
 
 g:vima_enabled             Automatically start Git review after reads. false.
+                           Changing it directly does not affect loaded buffers;
+                           use the global commands to apply it immediately.
 g:vima_show_signs          Display + signs. true.
 g:vima_delete_prefix       Prefix for deleted virtual lines. Empty by default.
 g:vima_debounce            Refresh delay in milliseconds. 150.

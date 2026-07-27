@@ -84,12 +84,29 @@ The cursor must be on a green added line. For a deletion-only change, place the
 cursor on the real line to which the virtual deletion is attached. Commands
 outside those locations change nothing.
 
+### Launch with Vima enabled
+
+To keep regular `vim` sessions opt-in while providing a separate command that
+starts with Vima enabled globally, add this alias to `~/.bashrc`:
+
+```sh
+alias vima="vim -c 'VimaEnableAll'"
+```
+
+Reload the configuration with `source ~/.bashrc`, then use `vima file.txt`.
+`:VimaEnableAll` attaches eligible buffers that were loaded at startup and
+automatically attaches eligible buffers opened later in the same session. For
+Zsh, put the same alias in `~/.zshrc` instead.
+
 ## Commands
 
 - `:VimaEnable` starts review mode from the safe Git index baseline.
 - `:VimaStart` starts review mode from the current in-memory buffer.
 - `:VimaDisable` clears review state and restores mappings.
 - `:VimaToggle` toggles review mode.
+- `:VimaEnableAll` enables automatic review and attaches all loaded file buffers.
+- `:VimaDisableAll` disables automatic review and detaches all buffers.
+- `:VimaToggleAll` toggles automatic review and all loaded buffers.
 - `:VimaRefresh` recalculates decorations.
 - `:VimaReset` makes the current buffer the baseline for a new transaction.
 - `:VimaAllow` and `:VimaReject` act on the change under the cursor.
@@ -123,6 +140,9 @@ let g:vima_mappings = {
       \ 'redo': '<C-r>',
       \ }
 ```
+
+`g:vima_enabled` controls automatic review for buffers read later. The global
+commands also apply the setting immediately to buffers that are already loaded.
 
 Set a mapping to `v:false` or an empty string to leave that key untouched. Vima
 also provides `<Plug>(VimaAllow)`, `<Plug>(VimaReject)`, `<Plug>(VimaUndo)`, and

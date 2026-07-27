@@ -585,5 +585,25 @@ function! vima#toggle(bufnr) abort
   if has_key(s:sessions, a:bufnr) | call vima#disable(a:bufnr) | else | call vima#enable(a:bufnr) | endif
 endfunction
 
+function! vima#enable_all() abort
+  let g:vima_enabled = v:true
+  for info in getbufinfo({'bufloaded': v:true})
+    if info.listed && !has_key(s:sessions, info.bufnr)
+      call vima#enable(info.bufnr)
+    endif
+  endfor
+endfunction
+
+function! vima#disable_all() abort
+  let g:vima_enabled = v:false
+  for bufnr in keys(copy(s:sessions))
+    call vima#disable(str2nr(bufnr))
+  endfor
+endfunction
+
+function! vima#toggle_all() abort
+  if g:vima_enabled | call vima#disable_all() | else | call vima#enable_all() | endif
+endfunction
+
 let &cpoptions = s:save_cpo
 unlet s:save_cpo

@@ -104,6 +104,36 @@ VimaRejectAll
 call assert_equal(['git baseline', 'second'], getline(1, '$'), 'Git baseline reject failed')
 VimaDisable
 
+" Global commands affect loaded buffers and control automatic future attaches.
+set hidden
+let s:git_path_two = s:git_dir .. '/tracked-two.txt'
+call writefile(['second baseline'], s:git_path_two)
+call system('git -C ' .. shellescape(s:git_dir) .. ' add -- ' .. shellescape('tracked-two.txt'))
+call assert_equal(0, v:shell_error, 'second git add failed')
+execute 'edit! ' .. fnameescape(s:git_path)
+let s:git_buf_one = bufnr()
+execute 'edit! ' .. fnameescape(s:git_path_two)
+let s:git_buf_two = bufnr()
+VimaEnableAll
+call assert_true(g:vima_enabled, 'enable all did not enable automatic review')
+call assert_true(getbufvar(s:git_buf_one, 'vima_attached', v:false), 'enable all missed first loaded buffer')
+call assert_true(getbufvar(s:git_buf_two, 'vima_attached', v:false), 'enable all missed second loaded buffer')
+VimaToggleAll
+call assert_false(g:vima_enabled, 'toggle all did not disable automatic review')
+call assert_false(getbufvar(s:git_buf_one, 'vima_attached', v:false), 'toggle all left first buffer attached')
+call assert_false(getbufvar(s:git_buf_two, 'vima_attached', v:false), 'toggle all left second buffer attached')
+VimaToggleAll
+call assert_true(g:vima_enabled, 'toggle all did not enable automatic review')
+let s:git_path_three = s:git_dir .. '/tracked-three.txt'
+call writefile(['future baseline'], s:git_path_three)
+call system('git -C ' .. shellescape(s:git_dir) .. ' add -- ' .. shellescape('tracked-three.txt'))
+call assert_equal(0, v:shell_error, 'third git add failed')
+execute 'edit! ' .. fnameescape(s:git_path_three)
+call assert_true(getbufvar(bufnr(), 'vima_attached', v:false), 'automatic review missed a future buffer')
+VimaDisableAll
+call assert_false(g:vima_enabled, 'disable all did not disable automatic review')
+set nohidden
+
 let s:untracked_path = s:git_dir .. '/untracked.txt'
 call writefile(['untracked survives'], s:untracked_path)
 execute 'edit! ' .. fnameescape(s:untracked_path)
