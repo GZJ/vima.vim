@@ -15,6 +15,82 @@ function! s:clear(bufnr) abort
   silent! execute 'sign unplace * group=Vima buffer=' .. a:bufnr
 endfunction
 
+function! s:change_line(bufnr, change) abort
+  let info = getbufinfo(a:bufnr)
+  return empty(info) ? 1 : max([1, min([a:change.new_start, info[0].linecount])])
+endfunction
+
+function! s:close_hints(session, winid) abort
+  for popup_id in get(get(a:session, 'hints', {}), string(a:winid), [])
+    if popup_id > 0 | call popup_close(popup_id) | endif
+  endfor
+  if has_key(get(a:session, 'hints', {}), string(a:winid))
+    call remove(a:session.hints, string(a:winid))
+  endif
+endfunction
+
+function! s:hint_popup(session, winid, text, row) abort
+  let position = win_screenpos(a:winid)
+  let winnr = win_id2win(a:winid)
+  if winnr == 0 | return | endif
+  let width = winwidth(winnr)
+  let text_width = strdisplaywidth(a:text)
+  if text_width >= width | return | endif
+  let popup_id = popup_create(a:text, {
+        \ 'line': position[0] + a:row,
+        \ 'col': position[1] + width - text_width,
+        \ 'pos': 'topleft', 'zindex': 150, 'highlight': 'VimaHint',
+        \ 'wrap': v:false, 'mapping': v:false,
+        \ })
+  call add(a:session.hints[string(a:winid)], popup_id)
+endfunction
+
+function! vima#update_hints(bufnr) abort
+  if !has_key(s:sessions, a:bufnr) || bufnr() != a:bufnr | return | endif
+  let session = s:sessions[a:bufnr]
+  let winid = win_getid()
+  if !has_key(session, 'hints') | let session.hints = {} | endif
+  call s:close_hints(session, winid)
+  let session.hints[string(winid)] = []
+  if empty(session.changes) | return | endif
+  let top = line('w0')
+  let bottom = line('w$')
+  let above = 0 | let below = 0
+  let nearest_above = 0 | let nearest_below = 0
+  for change in session.changes
+    let lnum = s:change_line(a:bufnr, change)
+    if lnum < top
+      let above += 1 | let nearest_above = lnum
+    elseif lnum > bottom
+      let below += 1
+      if nearest_below == 0 | let nearest_below = lnum | endif
+    endif
+  endfor
+  if above > 0
+    call s:hint_popup(session, winid, printf('↑ %d pending · nearest L%d', above, nearest_above), 0)
+  endif
+  if below > 0
+    call s:hint_popup(session, winid, printf('↓ %d pending · nearest L%d', below, nearest_below), winheight(win_id2win(winid)) - 1)
+  endif
+endfunction
+
+function! vima#statusline(...) abort
+  let bufnr = get(a:000, 0, bufnr())
+  if !has_key(s:sessions, bufnr) || empty(s:sessions[bufnr].changes) | return '' | endif
+  let cursor = bufnr == bufnr() ? line('.') : 1
+  let above = 0 | let below = 0 | let next_line = 0
+  for change in s:sessions[bufnr].changes
+    let lnum = s:change_line(bufnr, change)
+    if lnum < cursor | let above += 1 | endif
+    if lnum > cursor
+      let below += 1
+      if next_line == 0 | let next_line = lnum | endif
+    endif
+  endfor
+  if next_line == 0 | let next_line = s:change_line(bufnr, s:sessions[bufnr].changes[0]) | endif
+  return printf('Vima %d pending · ↑%d ↓%d · next L%d', len(s:sessions[bufnr].changes), above, below, next_line)
+endfunction
+
 function! s:expand_tabs(text, bufnr, start_width) abort
   let parts = []
   let width = a:start_width
@@ -213,6 +289,7 @@ function! vima#refresh(bufnr) abort
   if error !=# ''
     call s:clear(a:bufnr)
     let session.changes = []
+    if bufnr() == a:bufnr | call vima#update_hints(a:bufnr) | endif
     if get(session, 'last_error', '') !=# error
       call s:notify(error .. '; rendering is suspended')
       let session.last_error = error
@@ -223,6 +300,7 @@ function! vima#refresh(bufnr) abort
   if result.error !=# ''
     call s:clear(a:bufnr)
     let session.changes = []
+    if bufnr() == a:bufnr | call vima#update_hints(a:bufnr) | endif
     if get(session, 'last_error', '') !=# result.error
       call s:notify(result.error)
       let session.last_error = result.error
@@ -231,6 +309,41 @@ function! vima#refresh(bufnr) abort
   endif
   let session.last_error = ''
   call s:render(a:bufnr, result.changes)
+  if bufnr() == a:bufnr | call vima#update_hints(a:bufnr) | endif
+endfunction
+
+function! s:navigate(bufnr, forward) abort
+  if !has_key(s:sessions, a:bufnr) || empty(s:sessions[a:bufnr].changes)
+    call s:notify('no pending change') | return
+  endif
+  let changes = s:sessions[a:bufnr].changes
+  let cursor = line('.')
+  let selected = {}
+  if a:forward
+    for change in changes
+      if s:change_line(a:bufnr, change) > cursor | let selected = change | break | endif
+    endfor
+    let wrapped = empty(selected)
+    if wrapped | let selected = changes[0] | endif
+  else
+    for change in reverse(copy(changes))
+      if s:change_line(a:bufnr, change) < cursor | let selected = change | break | endif
+    endfor
+    let wrapped = empty(selected)
+    if wrapped | let selected = changes[-1] | endif
+  endif
+  call cursor(s:change_line(a:bufnr, selected), 1)
+  normal! zz
+  call vima#update_hints(a:bufnr)
+  if wrapped | call s:notify(a:forward ? 'wrapped to first change' : 'wrapped to last change') | endif
+endfunction
+
+function! vima#next(bufnr) abort
+  call s:navigate(a:bufnr, v:true)
+endfunction
+
+function! vima#previous(bufnr) abort
+  call s:navigate(a:bufnr, v:false)
 endfunction
 
 function! s:current_change(bufnr) abort
@@ -398,6 +511,8 @@ function! s:install_mappings(bufnr, session) abort
         \ ['reject', '<Plug>(VimaReject)'],
         \ ['undo', '<Plug>(VimaUndo)'],
         \ ['redo', '<Plug>(VimaRedo)'],
+        \ ['previous', '<Plug>(VimaPrevious)'],
+        \ ['next', '<Plug>(VimaNext)'],
         \ ]
   for spec in specs
     let lhs = get(g:vima_mappings, spec[0], '')
@@ -480,7 +595,7 @@ endfunction
 function! s:begin_review(bufnr, baseline, mode) abort
   let session = get(s:sessions, a:bufnr, {})
   if empty(session)
-    let session = {'timer': -1, 'saved_maps': {}, 'installed_maps': {}, 'windows': {}}
+    let session = {'timer': -1, 'saved_maps': {}, 'installed_maps': {}, 'windows': {}, 'hints': {}}
     let s:sessions[a:bufnr] = session
     call s:install_mappings(a:bufnr, session)
   elseif session.timer != -1
@@ -519,6 +634,7 @@ function! vima#disable(bufnr) abort
   let session = s:sessions[a:bufnr]
   if session.timer != -1 | call timer_stop(session.timer) | let session.timer = -1 | endif
   call s:restore_mappings(a:bufnr, session)
+  for winid in keys(copy(get(session, 'hints', {}))) | call s:close_hints(session, str2nr(winid)) | endfor
   call s:restore_windows(a:bufnr, session)
   call remove(s:sessions, a:bufnr)
   call setbufvar(a:bufnr, 'vima_attached', v:false)
@@ -578,6 +694,7 @@ function! vima#cleanup(bufnr) abort
   if !has_key(s:sessions, a:bufnr) | return | endif
   let session = s:sessions[a:bufnr]
   if session.timer != -1 | call timer_stop(session.timer) | endif
+  for winid in keys(copy(get(session, 'hints', {}))) | call s:close_hints(session, str2nr(winid)) | endfor
   call remove(s:sessions, a:bufnr)
 endfunction
 

@@ -25,8 +25,33 @@ let s:start_width = strdisplaywidth(s:prefix)
 let s:tab_width = &tabstop - (s:start_width % &tabstop)
 call assert_true(index(map(copy(s:deleted_props), {_, prop -> prop.text}), s:prefix .. repeat(' ', s:tab_width) .. 'one') >= 0, 'deleted Tab indentation is misaligned')
 
-" Consecutive deleted lines must retain their original top-to-bottom order.
+" Pending navigation, status, and off-screen hints work together.
 VimaDisable
+call setline(1, map(range(1, 14), {_, value -> 'line ' .. value}))
+call deletebufline(bufnr(), 15, '$')
+VimaStart
+call setline(2, 'changed 2')
+call setline(13, 'changed 13')
+VimaRefresh
+call assert_match('Vima 2 pending', vima#statusline(), 'pending status count is incorrect')
+call cursor(1, 1)
+resize 5
+call vima#update_hints(bufnr())
+call assert_true(!empty(popup_list()), 'off-screen pending hint was not displayed')
+VimaNext
+call assert_equal(2, line('.'), 'next change did not select the first hunk')
+VimaNext
+call assert_equal(13, line('.'), 'next change did not select the second hunk')
+VimaNext
+call assert_equal(2, line('.'), 'next change did not wrap')
+VimaPrevious
+call assert_equal(13, line('.'), 'previous change did not wrap')
+call assert_equal('<Plug>(VimaPrevious)', maparg('[c', 'n', v:false, v:true).rhs, 'previous mapping was not installed')
+call assert_equal('<Plug>(VimaNext)', maparg(']c', 'n', v:false, v:true).rhs, 'next mapping was not installed')
+VimaDisable
+resize 20
+
+" Consecutive deleted lines must retain their original top-to-bottom order.
 call setline(1, ['first', 'second', 'third', 'tail'])
 call deletebufline(bufnr(), 5, '$')
 VimaStart

@@ -79,6 +79,11 @@ While review mode is enabled:
 - `r` rejects the change under the cursor and restores baseline text.
 - `u` undoes the latest review decision, or falls back to native undo.
 - `Ctrl-r` redoes the latest review decision, or falls back to native redo.
+- `[c` jumps to the previous pending change and `]c` jumps to the next one.
+  Navigation wraps and centers the selected change.
+
+Off-screen changes are summarized at the top and bottom window edges. Use
+`vima#statusline()` for a statusline-friendly pending summary.
 
 The cursor must be on a green added line. For a deletion-only change, place the
 cursor on the real line to which the virtual deletion is attached. Commands
@@ -112,6 +117,7 @@ Zsh, put the same alias in `~/.zshrc` instead.
 - `:VimaAllow` and `:VimaReject` act on the change under the cursor.
 - `:VimaAllowAll` and `:VimaRejectAll` act on all pending changes.
 - `:VimaUndo` and `:VimaRedo` manage review decisions.
+- `:VimaPrevious` and `:VimaNext` navigate pending changes.
 
 Allowing a change does not write, stage, or commit it. Use `:VimaReset` after
 accepting a completed transaction. File reloads retain the selected Git or
@@ -138,6 +144,8 @@ let g:vima_mappings = {
       \ 'reject': 'r',
       \ 'undo': 'u',
       \ 'redo': '<C-r>',
+      \ 'previous': '[c',
+      \ 'next': ']c',
       \ }
 ```
 
@@ -145,8 +153,8 @@ let g:vima_mappings = {
 commands also apply the setting immediately to buffers that are already loaded.
 
 Set a mapping to `v:false` or an empty string to leave that key untouched. Vima
-also provides `<Plug>(VimaAllow)`, `<Plug>(VimaReject)`, `<Plug>(VimaUndo)`, and
-`<Plug>(VimaRedo)`.
+also provides `<Plug>(VimaAllow)`, `<Plug>(VimaReject)`, `<Plug>(VimaUndo)`,
+`<Plug>(VimaRedo)`, `<Plug>(VimaPrevious)`, and `<Plug>(VimaNext)`.
 
 Buffers above the configured limits are not rendered. History is bounded and
 stores changed hunks plus hashes instead of a complete buffer for every action.

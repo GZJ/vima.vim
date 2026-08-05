@@ -56,6 +56,12 @@ COMMANDS                                                      *vima-commands*
                                                        *:VimaRedo*
 :VimaRedo       Redo the latest Vima decision, otherwise use native redo.
 
+                                                       *:VimaPrevious*
+:VimaPrevious   Jump to the previous pending change, wrapping at the beginning.
+
+                                                       *:VimaNext*
+:VimaNext       Jump to the next pending change, wrapping at the end.
+
 ===============================================================================
 OPTIONS                                                        *vima-options*
 
@@ -74,13 +80,16 @@ g:vima_internal_diff_max_file_size
                            Maximum bytes for the built-in diff() path. 512 KiB.
 g:vima_internal_diff_max_lines
                            Maximum lines for the built-in diff() path. 5000.
-g:vima_mappings            Dict containing allow, reject, undo, and redo keys.
+g:vima_mappings            Dict containing allow, reject, undo, redo, previous
+                           ([c), and next (]c) keys.
 
 Vima saves and disables the window-local 'wrap' option while a review is active,
 then restores it on |:VimaDisable|. This keeps real and virtual lines aligned.
 
 Namespaced mappings are available as <Plug>(VimaAllow), <Plug>(VimaReject),
-<Plug>(VimaUndo), and <Plug>(VimaRedo).
+<Plug>(VimaUndo), <Plug>(VimaRedo), <Plug>(VimaPrevious), and <Plug>(VimaNext).
+Off-screen changes are summarized at the top and bottom window edges.
+vima#statusline() returns a statusline-friendly pending summary.
 
 ===============================================================================
 SAFETY                                                           *vima-safety*
