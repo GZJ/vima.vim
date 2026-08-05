@@ -1,6 +1,7 @@
 let s:repo_root = fnamemodify(expand('<sfile>'), ':p:h:h')
 execute 'set runtimepath^=' .. fnameescape(s:repo_root)
 runtime plugin/vima.vim
+call assert_equal('- ', g:vima_delete_prefix, 'default deleted-line prefix is incorrect')
 
 let s:path = tempname()
 call writefile(["\tone", 'two', 'three'], s:path)

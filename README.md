@@ -130,7 +130,7 @@ Set options before the plugin loads:
 ```vim
 let g:vima_enabled = v:false
 let g:vima_show_signs = v:true
-let g:vima_delete_prefix = ''
+let g:vima_delete_prefix = '- '
 let g:vima_debounce = 150
 let g:vima_max_file_size = 2 * 1024 * 1024
 let g:vima_max_lines = 50000

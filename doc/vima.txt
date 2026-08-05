@@ -69,7 +69,7 @@ g:vima_enabled             Automatically start Git review after reads. false.
                            Changing it directly does not affect loaded buffers;
                            use the global commands to apply it immediately.
 g:vima_show_signs          Display + signs. true.
-g:vima_delete_prefix       Prefix for deleted virtual lines. Empty by default.
+g:vima_delete_prefix       Prefix for deleted virtual lines. "- " by default.
 g:vima_debounce            Refresh delay in milliseconds. 150.
 g:vima_max_file_size       Maximum buffer bytes. 2 MiB.
 g:vima_max_lines           Maximum line count. 50000.

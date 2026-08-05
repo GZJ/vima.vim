@@ -15,7 +15,7 @@ endif
 
 if !exists('g:vima_enabled') | let g:vima_enabled = v:false | endif
 if !exists('g:vima_show_signs') | let g:vima_show_signs = v:true | endif
-if !exists('g:vima_delete_prefix') | let g:vima_delete_prefix = '' | endif
+if !exists('g:vima_delete_prefix') | let g:vima_delete_prefix = '- ' | endif
 if !exists('g:vima_debounce') | let g:vima_debounce = 150 | endif
 if !exists('g:vima_max_file_size') | let g:vima_max_file_size = 2 * 1024 * 1024 | endif
 if !exists('g:vima_max_lines') | let g:vima_max_lines = 50000 | endif
